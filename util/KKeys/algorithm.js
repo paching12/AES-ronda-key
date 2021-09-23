@@ -1,91 +1,77 @@
 const { CIPHER_KEY,
-    SUBBYTESTABLE,
-    ITERATIONS_RCON } = require('./keys');
+    ITERATIONS_RCON,
+    NK,
+} = require('./constants');
+const {
+    hex2bin,
+    bin2hex,
+} = require('../conversions');
+const {
+    getFirst4Words,
+    rotWord,
+    getSubWord,
+} = require('./rondaKeysFuncs');
 
 const { xor } = require('../constants');
-const {
-    hex2bin
-} = require('../conversions');
 
+const unshiftZero = (word) => {
+    return (word.length === 7) ? `0${word}` : word; 
+};
 
-const TYPE_VALUE = 'HEX';
+const getKeys = (CK = null, debug = false) => {
+    if(!Array.isArray(CK)) CK = null;
+    const firstWords = getFirst4Words(CK || CIPHER_KEY);
+    let words = [...firstWords];
+    // console.log('words', words);
+    for( let i = 4; i < 44; i++ ) {
+        let temp = words[i-1];
+        const tempOriginal = temp;
+        let afterRotWord = null, afterSubWord = null, rcon = null, rconBin = null;
 
-const getTypeValue = (value, type) => {
-    let cast = null;
-    switch(type || TYPE_VALUE) {
-        case 'HEX':
-            cast = 16;
-        break;
-        case 'DEC':
-            cast = 10;
-        break;
-        case 'OCT':
-            cast = 8;
-        break;
-        default:
-            cast = 2;
-    }
-    return TYPE_VALUE == null ? value : value.toString(cast); 
-}
+        // console.log('temp', temp);
+        if (i%4 === 0) {
+            afterRotWord = rotWord(temp);
+            //console.log('rotWord', afterRotWord);
 
-const getFirst4Words = (CK) => {
-    if (!Array.isArray(CK)) throw new Error('getFirstWords just accept array parameter with hex values');
-    const words = [];
-    try {
-        for(let i = 0; i < CK.length; i = i+4 ) {
-            let word = null;
-            for(let j = i; j < (i+3); j++) {
-                word = !word ? CK[j] : word;
-                word = ByteConcat(getTypeValue(word, 'HEX'), getTypeValue(CK[j+1], 'HEX'));
-            }
-            words[i/4] = getTypeValue(word);
+            // SubWord Process
+            afterSubWord = getSubWord(afterRotWord);
+            //console.log('afterSubWord', afterSubWord);
+
+            // RCON Process 
+                                // iteration number or index
+            rcon = ITERATIONS_RCON[i];
+            // console.log(rcon);
+
+            const afterSubWordBin = hex2bin(afterSubWord);
+            rconBin = hex2bin(rcon);
+
+            // XOR with RCON
+            temp = unshiftZero( bin2hex( xor(afterSubWordBin, rconBin) ) );
+            // console.log('XOR with Rcon', temp);    
         }
-    } catch(error) {
-        console.error('getFirstWords function', error);
+        
+
+        // Get New word !
+        const wordTmpBin  = hex2bin(words[i-NK]);
+        const tempBin = hex2bin(temp);
+        // console.log(`words[${i}] = (temp XOR words[i-NK]) \n${temp} XOR ${words[i-NK]} = ${words[i]}`);
+        words[i] = unshiftZero( bin2hex( xor(tempBin, wordTmpBin) ) );
+
+        
+        
+        debug && console.log(`
+        +===================================+
+        |  temp: ${tempOriginal}
+        |  After RotWord(): ${afterRotWord}
+        |  After SubWord(): ${afterSubWord}
+        |  Rcon[i/Nk]: ${rcon}
+        |  After XOR with Rcon: ${temp}
+        |  words[${i}]: ${words[i]}
+        +===================================+`);
     }
+
     return words;
 };
 
-const ByteConcat = (item, item2) => {
-   return item+item2;
-};
 
-const rotWord = (word) => {
-    if (word.length > 8 || word.length < 1) throw new Error('This word needs 4 bytes (8 caracters)');  
-    let newRotWord = word;
-    const firstByte = newRotWord.substr(0,2);
-    newRotWord = newRotWord.substr(2,newRotWord.length)+firstByte;
-    return newRotWord;
-};
-
-const getSubWord = (byte) => {
-    const firstNibble  = byte[0];
-    const secondNibble = byte[1]; 
-    return SUBBYTESTABLE[firstNibble][secondNibble];
-};
-
-console.log('words', getFirst4Words(CIPHER_KEY));
-const afterRotWord = rotWord('09cf4f3c');
-console.log('rotWord', afterRotWord);
-
-// SubWord Process
-let afterSubWord = '';
-for(let i = 0; i < afterRotWord.length; i=i+2) {
-    const byte   = afterRotWord[i]+afterRotWord[i+1];
-    afterSubWord += getSubWord(byte);
-}
-
-console.log('afterSubWord', afterSubWord);
-
-// RCON Process 
-                    // iteration number or index
-const rcon = ITERATIONS_RCON[4];
-console.log(rcon);
-
-const afterSubWordHex = hex2bin(afterSubWord);
-const rconHex = hex2bin(rcon);
-
-// XOR with RCON
-const afterXor = xor(afterSubWordHex, rconHex);
-console.log();
-
+module.exports = getKeys;

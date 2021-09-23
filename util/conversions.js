@@ -1,6 +1,7 @@
+const removeHexSymbol = (hex) => hex.replace("0x", "").toLowerCase();
 
-function hex2bin(hex){
-    hex = hex.replace("0x", "").toLowerCase();
+const  hex2bin = (hex) => {
+    hex = removeHexSymbol(hex);
     var out = "";
     for(var c of hex) {
         switch(c) {
@@ -24,8 +25,33 @@ function hex2bin(hex){
         }
     }
     return out;
+};
+
+const bin2hex = (binaryNumber) => parseInt(binaryNumber, 2).toString(16);
+
+const TYPE_VALUE = 'HEX';
+
+const getStringTypeValue = (value, type) => {
+    let cast = null;
+    switch(type || TYPE_VALUE) {
+        case 'HEX':
+            cast = 16;
+        break;
+        case 'DEC':
+            cast = 10;
+        break;
+        case 'OCT':
+            cast = 8;
+        break;
+        default:
+            cast = 2;
+    }
+    return TYPE_VALUE == null ? value : value.toString(cast); 
 }
 
 module.exports = {
-    hex2bin
+    hex2bin,
+    bin2hex,
+    getStringTypeValue,
+    removeHexSymbol,
 };

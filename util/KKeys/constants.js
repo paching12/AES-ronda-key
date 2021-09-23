@@ -1,4 +1,4 @@
-const CIPHER_KEY = [0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,0xab,0xf7,0x15,0x88,0x09,0xcf,0x4f,0x3c];
+const CIPHER_KEY = ['2b','7e','15','16','28','ae','d2','a6','ab','f7','15','88','09','cf','4f', '3c'];
 
 const ITERATIONS_RCON = {
     4:  "01000000",
@@ -63,8 +63,8 @@ const SUBBYTESTABLE = {
         f: '76',
     },
     1:{
-        1: 'ca',
-        0: '82',
+        0: 'ca',
+        1: '82',
         2: 'c9',
         3: '7d',
         4: 'fa',
@@ -334,8 +334,13 @@ const SUBBYTESTABLE = {
     },
 };
 
+const NK = 4;
+const NR = 10;
+
 module.exports = {
     CIPHER_KEY,
     ITERATIONS_RCON,
     SUBBYTESTABLE,
+    NK,
+    NR,
 }
