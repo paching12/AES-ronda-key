@@ -22,32 +22,26 @@ const getKeys = (CK = null, debug = false) => {
     if(!Array.isArray(CK)) CK = null;
     const firstWords = getFirst4Words(CK || CIPHER_KEY);
     let words = [...firstWords];
-    // console.log('words', words);
     for( let i = 4; i < 44; i++ ) {
         let temp = words[i-1];
         const tempOriginal = temp;
         let afterRotWord = null, afterSubWord = null, rcon = null, rconBin = null;
 
-        // console.log('temp', temp);
         if (i%4 === 0) {
             afterRotWord = rotWord(temp);
-            //console.log('rotWord', afterRotWord);
 
             // SubWord Process
             afterSubWord = getSubWord(afterRotWord);
-            //console.log('afterSubWord', afterSubWord);
 
             // RCON Process 
                                 // iteration number or index
             rcon = ITERATIONS_RCON[i];
-            // console.log(rcon);
 
             const afterSubWordBin = hex2bin(afterSubWord);
             rconBin = hex2bin(rcon);
 
             // XOR with RCON
             temp = unshiftZero( bin2hex( xor(afterSubWordBin, rconBin) ) );
-            // console.log('XOR with Rcon', temp);    
         }
         
 
